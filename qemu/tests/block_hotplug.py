@@ -93,7 +93,9 @@ def run(test, params, env):
             if params.get("need_plug") == "yes":
                 disks_before_plug = find_disk(vm, get_disk_cmd)
                 devs = vm.devices.images_define_by_params(image_name,
-                                                          image_params, 'disk')
+                                                          image_params,
+                                                          'disk',
+                                                          params=params)
                 for dev in devs:
                     ret = vm.devices.simple_hotplug(dev, vm.monitor)
                     if ret[1] is False:
@@ -129,8 +131,12 @@ def run(test, params, env):
                         test.fail("Check for block device failed."
                                   "Output: %s" % output)
                 session.close()
-
-                devs = [dev for dev in devs if not isinstance(dev, qdevices.QDrive)]
+                if params['use_blockdev'] == 'yes':
+                    devs = [dev for dev in devs if
+                            not isinstance(dev, qdevices.QHPBlockdev)]
+                else:
+                    devs = [dev for dev in devs if
+                            not isinstance(dev, qdevices.QDrive)]
                 device_list.extend(devs)
             else:
                 for device in vm.devices:
