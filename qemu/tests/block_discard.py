@@ -93,6 +93,12 @@ def run(test, params, env):
     params["force_create_image_%s" % test_image] = "no"
     params["images"] = " ".join([params["images"], test_image])
 
+    # Set the node driver to 'host_device', since qemu will hit
+    # "warning: Opening a block device as a file using the 'file'
+    # driver is deprecated"
+    if params['use_blockdev'] == 'yes':
+        params['blkdev_protocol_node_%s' % test_image] = 'host_device'
+
     error_context.context("boot guest with disk '%s'" % disk_name,
                           logging.info)
     # boot guest with scsi_debug disk
