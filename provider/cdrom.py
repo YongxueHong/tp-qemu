@@ -60,7 +60,10 @@ def is_device_tray_opened(vm, device_id):
                     return False
     else:
         for block in blocks_info:
-            if device_id in str(block) and block.get('tray_open'):
+            # check the key 'qdev' if existed in info-blocks,
+            # since the key 'device' is empty for using blockdev.
+            qdev = vm.get_device_id(device_id)
+            if qdev in str(block) and block.get('tray_open'):
                 return block['tray_open']
     return False
 

@@ -145,7 +145,7 @@ def run(test, params, env):
 
         error_context.context("Change disk size to %s in monitor"
                               % block_size, logging.info)
-        vm.monitor.block_resize(data_image_dev, block_size)
+        vm.monitor.block_resize(node_name=data_image_dev, size=block_size)
 
         if need_reboot:
             session = vm.reboot(session=session)

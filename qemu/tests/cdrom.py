@@ -215,12 +215,21 @@ def run(test, params, env):
                     cdfile = file_list[0]
         else:
             for block in blocks:
-                if block['device'] == qemu_cdrom_device:
-                    try:
-                        cdfile = block['inserted']['file']
-                        break
-                    except KeyError:
-                        continue
+                if params['use_blockdev'] == 'yes':
+                    qdev = vm.get_device_id(qemu_cdrom_device)
+                    if block['qdev'] == qdev:
+                        try:
+                            cdfile = block['inserted']['file']
+                            break
+                        except KeyError:
+                            continue
+                else:
+                    if block['device'] == qemu_cdrom_device:
+                        try:
+                            cdfile = block['inserted']['file']
+                            break
+                        except KeyError:
+                            continue
         return cdfile
 
     def _get_tray_stat_via_monitor(vm, qemu_cdrom_device):
@@ -251,13 +260,23 @@ def run(test, params, env):
                     tmp_block = ""
         else:
             for block in blocks:
-                if block['device'] == qemu_cdrom_device:
-                    key = list(filter(lambda x: re.match(r"tray.*open", x),
-                                      block.keys()))
-                    # compatible rhel6 and rhel7 diff qmp output
-                    if not key:
-                        break
-                    is_open, checked = (block[key[0]], True)
+                if params['use_blockdev'] == 'yes':
+                    qdev = vm.get_device_id(qemu_cdrom_device)
+                    if block['qdev'] == qdev:
+                        key = list(filter(lambda x: re.match(r"tray.*open", x),
+                                          block.keys()))
+                        # compatible rhel6 and rhel7 diff qmp output
+                        if not key:
+                            break
+                        is_open, checked = (block[key[0]], True)
+                else:
+                    if block['device'] == qemu_cdrom_device:
+                        key = list(filter(lambda x: re.match(r"tray.*open", x),
+                                          block.keys()))
+                        # compatible rhel6 and rhel7 diff qmp output
+                        if not key:
+                            break
+                        is_open, checked = (block[key[0]], True)
         return (is_open, checked)
 
     def is_tray_opened(vm, qemu_cdrom_device, mode='monitor',
@@ -441,8 +460,13 @@ def run(test, params, env):
                     device = block.split(':')[0]
         else:
             for block in blocks:
-                if 'inserted' not in block.keys():
-                    device = block['device']
+                if params['use_blockdev'] == 'yes':
+                    if 'inserted' in block.keys():
+                        if block['inserted']['file'] == 'null-co://':
+                            device = block['inserted']['node-name']
+                else:
+                    if 'inserted' not in block.keys():
+                        device = block['device']
         return device
 
     def eject_test_via_monitor(vm, qemu_cdrom_device, guest_cdrom_device,

@@ -37,8 +37,13 @@ def run(test, params, env):
                     return True
         else:
             for block in blocks_info:
-                if block['device'] == block_name and block['locked']:
-                    return True
+                if params['use_blockdev'] == 'yes':
+                    qdev = vm.get_device_id(block_name)
+                    if block['qdev'] == qdev and block['locked']:
+                        return True
+                else:
+                    if block['device'] == block_name and block['locked']:
+                        return True
         return False
 
     def change_block(cmd=None):
@@ -66,6 +71,10 @@ def run(test, params, env):
     orig_img_name = params.get("orig_img_name")
     change_insert_cmd = "change device=%s,target=%s" % (device_name,
                                                         orig_img_name)
+    if params['use_blockdev'] == 'yes':
+        id = vm.get_device_id(device_name)
+        change_insert_cmd = ("blockdev-change-medium id=%s,filename=%s" %
+                             (id, orig_img_name))
     monitor.send_args_cmd(change_insert_cmd)
     logging.info("Wait until device is ready")
     exists = utils_misc.wait_for(lambda: (orig_img_name in
@@ -116,6 +125,10 @@ def run(test, params, env):
     new_img_name = params.get("new_img_name")
     change_insert_cmd = "change device=%s,target=%s" % (device_name,
                                                         new_img_name)
+    if params['use_blockdev'] == 'yes':
+        id = vm.get_device_id(device_name)
+        change_insert_cmd = ("blockdev-change-medium id=%s,filename=%s" %
+                             (id, orig_img_name))
     output = change_block(change_insert_cmd)
     if not ("is locked" in output or "is not open" in output):
         msg = ("%s is not locked or is open "
@@ -134,6 +147,10 @@ def run(test, params, env):
         test.error("VM doesn't have any non-removable devices.")
     change_insert_cmd = "change device=%s,target=%s" % (device_name,
                                                         new_img_name)
+    if params['use_blockdev'] == 'yes':
+        id = vm.get_device_id(device_name)
+        change_insert_cmd = ("blockdev-change-medium id=%s,filename=%s" %
+                             (id, orig_img_name))
     output = change_block(change_insert_cmd)
     if "is not removable" not in output:
         test.fail("Could remove non-removable device!")
